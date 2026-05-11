@@ -1,0 +1,32 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "Nn_m0KQa3vjPtaL1A891B"
+uri = "file://artifacts/mini-app/public/images/category-savdo.png"
+type = "image"
+title = "E-commerce bot icon"
+
+[[generated]]
+id = "xKso2bZfJONbmhdfA7eN8"
+uri = "file://artifacts/mini-app/public/images/category-restoran.png"
+type = "image"
+title = "Restaurant bot icon"
+
+[[generated]]
+id = "h2FKTEORQlhyQgD011LKT"
+uri = "file://artifacts/mini-app/public/images/category-taxi.png"
+type = "image"
+title = "Taxi bot icon"
+
+[[generated]]
+id = "4KqUsAzB37HfG5H8LW3rY"
+uri = "file://artifacts/mini-app/public/images/category-media.png"
+type = "image"
+title = "Media bot icon"
+
+[[generated]]
+id = "tGJ6XX3ujDt2m0Y96Ymgu"
+uri = "file://artifacts/mini-app/public/images/category-crypto.png"
+type = "image"
+title = "Crypto bot icon"
