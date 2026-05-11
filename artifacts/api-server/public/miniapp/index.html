@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>UzBOT Market</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #6C63FF;
+    --primary-dark: #5A52E0;
+    --secondary: #FF6584;
+    --accent: #43E97B;
+    --bg: #0F0F1A;
+    --card: #1A1A2E;
+    --card2: #16213E;
+    --text: #FFFFFF;
+    --text2: #A0A0C0;
+    --border: rgba(108,99,255,0.2);
+    --radius: 16px;
+    --shadow: 0 8px 32px rgba(108,99,255,0.15);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .header {
+    background: linear-gradient(135deg, var(--primary) 0%, #9B59B6 100%);
+    padding: 20px 16px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    top: -60px; right: -60px;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    width: 150px; height: 150px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    bottom: -40px; left: -40px;
+  }
+  .header h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .badge { display: inline-block; background: rgba(255,255,255,0.2); border-radius: 20px; padding: 3px 12px; font-size: 11px; margin-top: 8px; }
+  .tabs { display: flex; background: var(--card); padding: 6px; margin: 12px 12px 0; border-radius: 12px; gap: 4px; }
+  .tab { flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent; color: var(--text2); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .tab.active { background: var(--primary); color: white; }
+  .content { padding: 12px; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-left: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .bot-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 14px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .bot-card:active { transform: scale(0.97); }
+  .bot-card.popular::before {
+    content: 'POPULAR';
+    position: absolute;
+    top: 8px; right: -8px;
+    background: var(--secondary);
+    color: white;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 2px 14px;
+    transform: rotate(35deg) translateX(-4px);
+    letter-spacing: 0.5px;
+  }
+  .bot-emoji { font-size: 28px; margin-bottom: 8px; }
+  .bot-name { font-size: 13px; font-weight: 700; margin-bottom: 4px; line-height: 1.3; }
+  .bot-price { font-size: 12px; color: var(--accent); font-weight: 700; }
+  .bot-price.custom { color: var(--secondary); }
+  .search-bar {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    width: 100%;
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 12px;
+    outline: none;
+  }
+  .search-bar::placeholder { color: var(--text2); }
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card2);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 16px 32px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto 16px; }
+  .modal-emoji { font-size: 48px; text-align: center; margin-bottom: 8px; }
+  .modal-title { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+  .modal-desc { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 16px; line-height: 1.6; }
+  .modal-price { text-align: center; margin-bottom: 16px; }
+  .modal-price span { font-size: 22px; font-weight: 800; color: var(--accent); }
+  .features { margin-bottom: 16px; }
+  .features h4 { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .feature-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+  .feature-item:last-child { border-bottom: none; }
+  .feature-check { color: var(--accent); font-size: 16px; }
+  .order-form { margin-top: 8px; }
+  .form-group { margin-bottom: 12px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; color: var(--text);
+    font-size: 14px; outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--primary); }
+  textarea.form-input { resize: none; height: 70px; }
+  .btn {
+    width: 100%; padding: 14px;
+    border: none; border-radius: 12px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; }
+  .btn-primary:active { transform: scale(0.98); opacity: 0.9; }
+  .btn-close { background: var(--card); color: var(--text2); margin-top: 8px; }
+  .success-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 200;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+  }
+  .success-screen.open { display: flex; }
+  .success-icon { font-size: 72px; margin-bottom: 16px; animation: bounce 0.5s ease; }
+  @keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
+  .success-title { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+  .success-desc { font-size: 14px; color: var(--text2); line-height: 1.6; }
+  .info-page { padding: 0 4px; }
+  .info-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+  .info-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .info-card p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .step { display: flex; gap: 12px; margin-bottom: 12px; }
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+  .step-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .highlight { color: var(--accent); font-weight: 700; }
+  .loading { text-align: center; padding: 40px; color: var(--text2); font-size: 14px; }
+  .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🤖 UzBOT Market</h1>
+  <p>Professional Telegram botlar</p>
+  <span class="badge">10+ tayyor bot • Arzon narxlar</span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('catalog')">🛍 Katalog</button>
+  <button class="tab" onclick="showTab('howto')">📖 Qanday?</button>
+  <button class="tab" onclick="showTab('about')">💡 Biz haqimizda</button>
+</div>
+
+<div class="content">
+  <div id="tab-catalog">
+    <input class="search-bar" type="text" placeholder="🔍 Bot qidiring..." oninput="filterBots(this.value)">
+    <div class="section-title">Barcha botlar</div>
+    <div class="grid" id="bot-grid"></div>
+  </div>
+
+  <div id="tab-howto" style="display:none">
+    <div class="info-page">
+      <div class="info-card">
+        <h3>🚀 Qanday ishlaydi?</h3>
+        <div style="margin-top:12px">
+          <div class="step"><div class="step-num">1</div><div class="step-text">Katalogdan kerakli botni tanlang va <span class="highlight">Buyurtma berish</span> tugmasini bosing</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-text">Telefon raqamingiz va izohing bilan buyurtma bering</div></div>
+          <div class="step"><div class="step-num">3</div><div class="step-text">Admin 24 soat ichida siz bilan bog'lanadi</div></div>
+          <div class="step"><div class="step-num">4</div><div class="step-text">To'lovdan so'ng bot <span class="highlight">1-3 ish kuni</span> ichida tayyor bo'ladi</div></div>
+          <div class="step"><div class="step-num">5</div><div class="step-text">Botingiz Railway serveriga joylashtiriladi va beriladi</div></div>
+        </div>
+      </div>
+      <div class="info-card">
+        <h3>💰 To'lov va narxlar</h3>
+        <p>• Minimal narx: <span class="highlight">50,000 so'm/oy</span><br>
+        • 1 hafta bepul sinov davri<br>
+        • To'lov: Payme, Click, Uzcard, Humo<br>
+        • Muddati tugashidan <span class="highlight">7 kun oldin</span> xabar beriladi<br>
+        • Maxsus botlar uchun narx alohida kelishiladi</p>
+      </div>
+      <div class="info-card">
+        <h3>🛡 Kafolat</h3>
+        <p>• Bot ishlamay qolsa <span class="highlight">bepul tuzatamiz</span><br>
+        • Texnik yordam 7/24<br>
+        • Bot kodi mijozga beriladi<br>
+        • 1 oy davomida bepul o'zgartirishlar</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-about" style="display:none">
+    <div class="info-page">
+      <div class="info-card">
+        <h3>🤖 UzBOT Market haqida</h3>
+        <p>Biz O'zbekistondagi eng arzon va sifatli Telegram bot marketimiz. 2023 yildan buyon faoliyat yuritamiz.</p>
+      </div>
+      <div class="info-card">
+        <h3>📊 Statistika</h3>
+        <p>• <span class="highlight">200+</span> bajarilgan loyiha<br>
+        • <span class="highlight">150+</span> mamnun mijoz<br>
+        • <span class="highlight">10+</span> bot turi<br>
+        • O'rtacha baholash: <span class="highlight">4.9/5 ⭐</span></p>
+      </div>
+      <div class="info-card">
+        <h3>📞 Bog'lanish</h3>
+        <p>Admin: <span class="highlight">@akaakayev8</span><br>
+        Ish vaqti: 09:00 – 22:00<br>
+        Javob vaqti: 30 daqiqa ichida</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bot Detail Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal" id="modal-content">
+    <div class="modal-handle"></div>
+    <div class="modal-emoji" id="m-emoji"></div>
+    <div class="modal-title" id="m-name"></div>
+    <div class="modal-desc" id="m-desc"></div>
+    <div class="modal-price"><span id="m-price"></span></div>
+    <div class="features">
+      <h4>Xususiyatlar</h4>
+      <div id="m-features"></div>
+    </div>
+    <div class="order-form">
+      <div class="form-group">
+        <label class="form-label">📞 Telefon yoki Telegram username *</label>
+        <input class="form-input" id="f-contact" type="text" placeholder="+998 90 123 45 67">
+      </div>
+      <div class="form-group">
+        <label class="form-label">💬 Qo'shimcha izoh (ixtiyoriy)</label>
+        <textarea class="form-input" id="f-note" placeholder="Bot haqida qo'shimcha talablaringiz..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="submitOrder()">🚀 Buyurtma berish</button>
+      <button class="btn btn-close" onclick="closeModal()">Yopish</button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Screen -->
+<div class="success-screen" id="success">
+  <div class="success-icon">🎉</div>
+  <div class="success-title">Buyurtma qabul qilindi!</div>
+  <div class="success-desc" style="margin-top:8px">
+    Admin 24 soat ichida siz bilan bog'lanadi.<br><br>
+    <span style="color:var(--accent)">@akaakayev8</span>
+  </div>
+  <button class="btn btn-primary" style="margin-top:24px;max-width:200px" onclick="closeSucess()">Davom etish</button>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp;
+if (tg) {
+  tg.ready();
+  tg.expand();
+  if (tg.colorScheme === 'light') {
+    document.documentElement.style.setProperty('--bg', '#F5F5FF');
+    document.documentElement.style.setProperty('--card', '#FFFFFF');
+    document.documentElement.style.setProperty('--card2', '#F0F0FF');
+    document.documentElement.style.setProperty('--text', '#1A1A2E');
+    document.documentElement.style.setProperty('--text2', '#666688');
+  }
+}
+
+const USER = tg?.initDataUnsafe?.user;
+const SERVER = window.location.origin;
+
+const BOTS = [
+  { id:'online_shop', name:"Online Do'kon Boti", emoji:'🛒', price:50000, desc:"Mahsulotlaringizni Telegram orqali soting. To'liq katalog, savat va buyurtma tizimi.", features:["Mahsulot katalogi","Savat tizimi","Buyurtma qabul","Admin panel","To'lov tizimi"], popular:true },
+  { id:'order_bot', name:"Buyurtma Qabul Boti", emoji:'📋', price:50000, desc:"Mijozlardan buyurtma qabul qiling, admin ga xabar boring. Restoran, yetkazib berish uchun ideal.", features:["Buyurtma qabul","Admin xabarlari","Holatni kuzatish","Mijoz tarix"] },
+  { id:'taxi_bot', name:"Taksi Boti", emoji:'🚕', price:80000, desc:"Taksi xizmati uchun professional bot. Haydovchilar va mijozlarni bog'laydi.", features:["Marshrut tizimi","Haydovchi panel","Narx hisoblash","GPS integratsiya","To'lov tizimi"], popular:true },
+  { id:'food_delivery', name:"Ovqat Yetkazish Boti", emoji:'🍕', price:70000, desc:"Ovqat yetkazib berish xizmati uchun to'liq bot.", features:["Menyu katalogi","Buyurtma tizimi","Yetkazish kuzatuv","To'lov tizimi","Reyting tizimi"] },
+  { id:'education_bot', name:"Ta'lim va Kurslar Boti", emoji:'📚', price:60000, desc:"Online kurslar, darslar va ta'lim materiallari uchun professional bot.", features:["Kurs katalogi","Dars materiallari","Test tizimi","Sertifikat","To'lov tizimi"] },
+  { id:'restaurant_bot', name:"Restoran Boti", emoji:'🍽️', price:65000, desc:"Restoran uchun to'liq bot. Stol bron qilish, menyu va buyurtma tizimi.", features:["Menyu","Stol bron","Buyurtma qabul","Admin panel","Reklama tizimi"] },
+  { id:'trading_bot', name:"Savdo va Biznes Boti", emoji:'💰', price:55000, desc:"Biznesingizni avtomatlashtiradigan universal savdo boti.", features:["Mahsulot katalogi","Narx taklif","Mijoz CRM","Hisobot","Xabar yuborish"] },
+  { id:'news_bot', name:"Yangiliklar Kanali Boti", emoji:'📰', price:45000, desc:"Yangiliklar va kontent kanali uchun avtomatik bot.", features:["Post rejalash","Statistika","Obuna tizimi","Auto post","Ko'p kanal"] },
+  { id:'survey_bot', name:"Anketa va Ovoz Boti", emoji:'📊', price:50000, desc:"So'rovnoma, anketa va ovoz berish uchun professional bot.", features:["Anketa yaratish","Natijalar","Eksport Excel","Anonimlik","Reyting"] },
+  { id:'custom_bot', name:"Maxsus Bot", emoji:'⭐', price:0, desc:"Sizning ehtiyojlaringizga moslashtirilgan maxsus bot.", features:["Har qanday funksiya","Maxsus dizayn","API integratsiya","24/7 qo'llab-quvvatlash","Cheksiz imkoniyatlar"], popular:true },
+];
+
+let selectedBot = null;
+
+function formatPrice(p) {
+  if (p === 0) return "Narx kelishiladi";
+  return p.toLocaleString('uz') + " so'm/oy";
+}
+
+function renderBots(list) {
+  const grid = document.getElementById('bot-grid');
+  grid.innerHTML = list.map(b => `
+    <div class="bot-card ${b.popular?'popular':''}" onclick="openBot('${b.id}')">
+      <div class="bot-emoji">${b.emoji}</div>
+      <div class="bot-name">${b.name}</div>
+      <div class="bot-price ${b.price===0?'custom':''}">${formatPrice(b.price)}</div>
+    </div>
+  `).join('');
+}
+
+function filterBots(q) {
+  const filtered = BOTS.filter(b => b.name.toLowerCase().includes(q.toLowerCase()) || b.desc.toLowerCase().includes(q.toLowerCase()));
+  renderBots(filtered);
+}
+
+function showTab(name) {
+  document.querySelectorAll('[id^=tab-]').forEach(el => el.style.display='none');
+  document.getElementById('tab-'+name).style.display='block';
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function openBot(id) {
+  selectedBot = BOTS.find(b => b.id === id);
+  if (!selectedBot) return;
+  document.getElementById('m-emoji').textContent = selectedBot.emoji;
+  document.getElementById('m-name').textContent = selectedBot.name;
+  document.getElementById('m-desc').textContent = selectedBot.desc;
+  document.getElementById('m-price').textContent = formatPrice(selectedBot.price);
+  document.getElementById('m-features').innerHTML = selectedBot.features.map(f =>
+    `<div class="feature-item"><span class="feature-check">✓</span>${f}</div>`
+  ).join('');
+  document.getElementById('f-contact').value = '';
+  document.getElementById('f-note').value = '';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  selectedBot = null;
+}
+
+async function submitOrder() {
+  if (!selectedBot) return;
+  const contact = document.getElementById('f-contact').value.trim();
+  const note = document.getElementById('f-note').value.trim();
+  if (!contact) {
+    document.getElementById('f-contact').style.borderColor = 'var(--secondary)';
+    setTimeout(() => document.getElementById('f-contact').style.borderColor = '', 2000);
+    return;
+  }
+  const btn = document.querySelector('.btn-primary');
+  btn.textContent = '⏳ Yuborilmoqda...';
+  btn.disabled = true;
+  try {
+    const body = {
+      botId: selectedBot.id,
+      contact,
+      note,
+      userId: USER?.id || 'unknown',
+      userFirstName: USER?.first_name || 'Noma\'lum',
+      username: USER?.username || '',
+    };
+    const resp = await fetch(SERVER + '/api/order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await resp.json();
+    if (data.success) {
+      closeModal();
+      document.getElementById('success').classList.add('open');
+      if (tg) tg.HapticFeedback?.notificationOccurred('success');
+    } else {
+      alert('Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+    }
+  } catch(e) {
+    alert('Server bilan muammo. Keyinroq urinib ko\'ring.');
+  } finally {
+    btn.textContent = '🚀 Buyurtma berish';
+    btn.disabled = false;
+  }
+}
+
+function closeSucess() {
+  document.getElementById('success').classList.remove('open');
+}
+
+renderBots(BOTS);
+</script>
+</body>
+</html>
