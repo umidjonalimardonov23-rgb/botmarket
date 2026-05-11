@@ -1,13 +1,14 @@
 import express, { type Express } from "express";
 import cors from "cors";
-import pinoHttp from "pino-http";
 import path from "path";
 import { fileURLToPath } from "url";
+import pinoHttp from "pino-http";
 import router from "./routes/index.js";
+import webhookRouter from "./routes/webhook.js";
 import { logger } from "./lib/logger.js";
-import { startBot } from "./lib/bot.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const app: Express = express();
 
 app.use(
@@ -29,22 +30,19 @@ app.use(
     },
   }),
 );
+
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const miniappPath = path.join(__dirname, "../../public/miniapp");
+app.use("/miniapp", express.static(miniappPath));
+
 app.use("/api", router);
+app.use(webhookRouter);
 
-// Serve mini-app static files in production
-if (process.env.NODE_ENV === "production") {
-  const miniAppDist = path.resolve(__dirname, "..", "..", "..", "artifacts", "mini-app", "dist", "public");
-  app.use(express.static(miniAppDist));
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(miniAppDist, "index.html"));
-  });
-}
-
-// Start Telegram bot
-startBot();
+app.get("/miniapp", (_req, res) => {
+  res.sendFile(path.join(miniappPath, "index.html"));
+});
 
 export default app;
