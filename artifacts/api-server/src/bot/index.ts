@@ -458,14 +458,17 @@ bot.callbackQuery(/^contact_user_(\d+)$/, async (ctx) => {
 });
 
 export async function startBot(): Promise<void> {
-  const mode = process.env["WEBHOOK_URL"] ? "webhook" : "polling";
-  if (mode === "polling") {
+  const webhookUrl = process.env["WEBHOOK_URL"];
+  const isProd = process.env["NODE_ENV"] === "production";
+  if (isProd && webhookUrl) {
+    logger.info({ webhookUrl }, "Bot running in webhook mode");
+    await bot.api.setWebhook(webhookUrl);
+  } else {
     logger.info("Bot starting in polling mode");
+    await bot.api.deleteWebhook({ drop_pending_updates: true });
     void bot.start({
       onStart: (info) => logger.info({ username: info.username }, "Bot started (polling)"),
     });
-  } else {
-    logger.info("Bot running in webhook mode");
   }
 }
 
