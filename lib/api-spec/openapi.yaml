@@ -1,26 +1,22 @@
 openapi: 3.1.0
 info:
+  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: BotMarket API
+  description: API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
-  - name: bots
-    description: Bot catalog operations
-  - name: orders
-    description: Order operations
-  - name: stats
-    description: Statistics and dashboard
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
+      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -28,151 +24,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
-
-  /bots:
-    get:
-      operationId: listBots
-      tags: [bots]
-      summary: List all bot types
-      responses:
-        "200":
-          description: List of bot types
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/BotType"
-
-  /bots/{id}:
-    get:
-      operationId: getBotType
-      tags: [bots]
-      summary: Get bot type by id
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Bot type detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BotType"
-        "404":
-          description: Not found
-
-  /orders:
-    get:
-      operationId: listOrders
-      tags: [orders]
-      summary: List all orders (admin)
-      responses:
-        "200":
-          description: Orders list
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Order"
-    post:
-      operationId: createOrder
-      tags: [orders]
-      summary: Submit a new bot order
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/OrderInput"
-      responses:
-        "201":
-          description: Order created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Order"
-
-  /orders/{id}:
-    get:
-      operationId: getOrder
-      tags: [orders]
-      summary: Get order by id
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: Order detail
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Order"
-
-  /orders/{id}/status:
-    patch:
-      operationId: updateOrderStatus
-      tags: [orders]
-      summary: Update order status (admin)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/OrderStatusUpdate"
-      responses:
-        "200":
-          description: Updated order
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Order"
-
-  /stats/dashboard:
-    get:
-      operationId: getDashboardStats
-      tags: [stats]
-      summary: Get platform statistics
-      responses:
-        "200":
-          description: Dashboard statistics
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DashboardStats"
-
-  /users/ref/{code}:
-    get:
-      operationId: getReferralInfo
-      tags: [bots]
-      summary: Get referral info by code
-      parameters:
-        - name: code
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Referral info
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ReferralInfo"
-
 components:
   schemas:
     HealthStatus:
@@ -183,120 +34,3 @@ components:
       required:
         - status
 
-    BotType:
-      type: object
-      required: [id, name, description, price, category, emoji, features, popular]
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        description:
-          type: string
-        price:
-          type: integer
-        category:
-          type: string
-        emoji:
-          type: string
-        features:
-          type: array
-          items:
-            type: string
-        popular:
-          type: boolean
-        imageUrl:
-          type: ["string", "null"]
-        serverMonthlyPrice:
-          type: integer
-
-    Order:
-      type: object
-      required: [id, botTypeId, botTypeName, clientName, clientPhone, telegramId, status, totalPrice, createdAt]
-      properties:
-        id:
-          type: integer
-        botTypeId:
-          type: integer
-        botTypeName:
-          type: string
-        clientName:
-          type: string
-        clientPhone:
-          type: string
-        telegramId:
-          type: string
-        telegramUsername:
-          type: ["string", "null"]
-        status:
-          type: string
-          enum: [pending, confirmed, in_progress, completed, cancelled]
-        totalPrice:
-          type: integer
-        notes:
-          type: ["string", "null"]
-        referralCode:
-          type: ["string", "null"]
-        createdAt:
-          type: string
-        updatedAt:
-          type: string
-
-    OrderInput:
-      type: object
-      required: [botTypeId, clientName, clientPhone, telegramId]
-      properties:
-        botTypeId:
-          type: integer
-        clientName:
-          type: string
-        clientPhone:
-          type: string
-        telegramId:
-          type: string
-        telegramUsername:
-          type: ["string", "null"]
-        notes:
-          type: ["string", "null"]
-        referralCode:
-          type: ["string", "null"]
-
-    OrderStatusUpdate:
-      type: object
-      required: [status]
-      properties:
-        status:
-          type: string
-          enum: [pending, confirmed, in_progress, completed, cancelled]
-
-    DashboardStats:
-      type: object
-      required: [totalOrders, pendingOrders, completedOrders, totalRevenue, totalUsers, popularBot]
-      properties:
-        totalOrders:
-          type: integer
-        pendingOrders:
-          type: integer
-        completedOrders:
-          type: integer
-        totalRevenue:
-          type: integer
-        totalUsers:
-          type: integer
-        popularBot:
-          type: string
-        recentOrders:
-          type: array
-          items:
-            $ref: "#/components/schemas/Order"
-
-    ReferralInfo:
-      type: object
-      required: [code, referrerName, totalReferrals]
-      properties:
-        code:
-          type: string
-        referrerName:
-          type: string
-        totalReferrals:
-          type: integer
