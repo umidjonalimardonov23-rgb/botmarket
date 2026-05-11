@@ -15,21 +15,27 @@ const BOT_TOKEN = process.env["BOT_TOKEN"];
 const ADMIN_ID = Number(process.env["ADMIN_ID"] || "7575930751");
 const PAYMENT_CARD = process.env["PAYMENT_CARD"] || "9860606760806673";
 const PAYMENT_NAME = process.env["PAYMENT_NAME"] || "Alimardonov Umidjon";
-const MINI_APP_URL = process.env["MINI_APP_URL"] || "https://t.me/AdminBotMarketBot/app";
+
+const REPLIT_DOMAIN = process.env["REPLIT_DEV_DOMAIN"] || process.env["REPLIT_DOMAINS"]?.split(",")[0];
+const MINI_APP_URL = process.env["MINI_APP_URL"] ||
+  (REPLIT_DOMAIN ? `https://${REPLIT_DOMAIN}/api/miniapp` : "");
 
 if (!BOT_TOKEN) throw new Error("BOT_TOKEN is required");
 
 export const bot = new Bot(BOT_TOKEN);
 
+bot.catch((err) => {
+  logger.error({ err: err.message, method: (err.error as any)?.method }, "Bot error");
+});
+
 const pendingOrders = new Map<number, { botId: string; step: string }>();
 
-function mainKeyboard(userId: number) {
-  const user = getUser(userId);
-  const trial = user ? isTrialActive(user) : true;
-  const kb = new InlineKeyboard()
-    .webApp("🛍 Botlar Do'koni", MINI_APP_URL)
-    .row()
-    .text("🤖 Katalog", "catalog")
+function mainKeyboard(_userId: number) {
+  const kb = new InlineKeyboard();
+  if (MINI_APP_URL) {
+    kb.webApp("🛍 Botlar Do'koni", MINI_APP_URL).row();
+  }
+  kb.text("🤖 Katalog", "catalog")
     .text("📦 Buyurtmalarim", "my_orders")
     .row()
     .text("👥 Referral", "referral")
