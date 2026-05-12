@@ -1,15 +1,16 @@
 {
-  "name": "botmarket-server",
-  "version": "1.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "grammy": "^1.42.0",
-    "node-cron": "^4.2.1"
+    "name": "botmarket-server",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+      "start": "node server.js"
+    },
+    "dependencies": {
+      "cors": "^2.8.5",
+      "express": "^4.21.2",
+      "grammy": "^1.42.0",
+      "node-cron": "^4.2.1"
+    }
   }
-}
+  
