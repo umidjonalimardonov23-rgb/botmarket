@@ -1,10 +1,11 @@
 [build]
-builder = "nixpacks"
-buildCommand = "npm install"
+  builder = "nixpacks"
+  buildCommand = "npm install --no-package-lock"
 
-[deploy]
-startCommand = "node server.js"
-healthcheckPath = "/api/healthz"
-healthcheckTimeout = 60
-restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 3
+  [deploy]
+  startCommand = "node server.js"
+  healthcheckPath = "/api/healthz"
+  healthcheckTimeout = 60
+  restartPolicyType = "on_failure"
+  restartPolicyMaxRetries = 3
+  
