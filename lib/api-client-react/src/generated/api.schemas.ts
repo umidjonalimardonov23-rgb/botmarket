@@ -9,89 +9,75 @@ export interface HealthStatus {
   status: string;
 }
 
-export interface BotType {
+export interface ApiError {
+  error: string;
+}
+
+export interface Bot {
   id: number;
   name: string;
+  username: string;
   description: string;
-  price: number;
   category: string;
-  emoji: string;
-  features: string[];
-  popular: boolean;
+  icon: string;
+  rating: number;
+  reviewCount: number;
+  isPremium?: boolean;
+  isVerified?: boolean;
+  languages: string[];
   /** @nullable */
-  imageUrl?: string | null;
-  serverMonthlyPrice?: number;
+  subscribers?: number | null;
+  createdAt?: string;
 }
 
-export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
+export interface BotInput {
+  name: string;
+  username: string;
+  description: string;
+  category: string;
+  icon: string;
+  isPremium?: boolean;
+  isVerified?: boolean;
+  languages: string[];
+  /** @nullable */
+  subscribers?: number | null;
+}
 
-export const OrderStatus = {
-  pending: "pending",
-  confirmed: "confirmed",
-  in_progress: "in_progress",
-  completed: "completed",
-  cancelled: "cancelled",
-} as const;
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+  count: number;
+}
 
-export interface Order {
+export interface Review {
   id: number;
-  botTypeId: number;
-  botTypeName: string;
-  clientName: string;
-  clientPhone: string;
-  telegramId: string;
+  botId: number;
+  authorName: string;
   /** @nullable */
-  telegramUsername?: string | null;
-  status: OrderStatus;
-  totalPrice: number;
-  /** @nullable */
-  notes?: string | null;
-  /** @nullable */
-  referralCode?: string | null;
+  authorAvatar?: string | null;
+  rating: number;
+  comment: string;
   createdAt: string;
-  updatedAt?: string;
 }
 
-export interface OrderInput {
-  botTypeId: number;
-  clientName: string;
-  clientPhone: string;
-  telegramId: string;
+export interface ReviewInput {
+  authorName: string;
   /** @nullable */
-  telegramUsername?: string | null;
-  /** @nullable */
-  notes?: string | null;
-  /** @nullable */
-  referralCode?: string | null;
+  authorAvatar?: string | null;
+  rating: number;
+  comment: string;
 }
 
-export type OrderStatusUpdateStatus =
-  (typeof OrderStatusUpdateStatus)[keyof typeof OrderStatusUpdateStatus];
-
-export const OrderStatusUpdateStatus = {
-  pending: "pending",
-  confirmed: "confirmed",
-  in_progress: "in_progress",
-  completed: "completed",
-  cancelled: "cancelled",
-} as const;
-
-export interface OrderStatusUpdate {
-  status: OrderStatusUpdateStatus;
-}
-
-export interface DashboardStats {
-  totalOrders: number;
-  pendingOrders: number;
-  completedOrders: number;
-  totalRevenue: number;
+export interface MarketStats {
+  totalBots: number;
+  totalCategories: number;
+  totalReviews: number;
   totalUsers: number;
-  popularBot: string;
-  recentOrders?: Order[];
 }
 
-export interface ReferralInfo {
-  code: string;
-  referrerName: string;
-  totalReferrals: number;
-}
+export type ListBotsParams = {
+  category?: string;
+  search?: string;
+  lang?: string;
+};

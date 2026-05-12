@@ -15,195 +15,145 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
- * @summary List all bot types
+ * @summary List all bots
  */
+export const ListBotsQueryParams = zod.object({
+  category: zod.coerce.string().optional(),
+  search: zod.coerce.string().optional(),
+  lang: zod.coerce.string().optional(),
+});
+
 export const ListBotsResponseItem = zod.object({
   id: zod.number(),
   name: zod.string(),
+  username: zod.string(),
   description: zod.string(),
-  price: zod.number(),
   category: zod.string(),
-  emoji: zod.string(),
-  features: zod.array(zod.string()),
-  popular: zod.boolean(),
-  imageUrl: zod.string().nullish(),
-  serverMonthlyPrice: zod.number().optional(),
+  icon: zod.string(),
+  rating: zod.number(),
+  reviewCount: zod.number(),
+  isPremium: zod.boolean().optional(),
+  isVerified: zod.boolean().optional(),
+  languages: zod.array(zod.string()),
+  subscribers: zod.number().nullish(),
+  createdAt: zod.string().optional(),
 });
 export const ListBotsResponse = zod.array(ListBotsResponseItem);
 
 /**
- * @summary Get bot type by id
+ * @summary Create a new bot
  */
-export const GetBotTypeParams = zod.object({
+export const CreateBotBody = zod.object({
+  name: zod.string(),
+  username: zod.string(),
+  description: zod.string(),
+  category: zod.string(),
+  icon: zod.string(),
+  isPremium: zod.boolean().optional(),
+  isVerified: zod.boolean().optional(),
+  languages: zod.array(zod.string()),
+  subscribers: zod.number().nullish(),
+});
+
+/**
+ * @summary Get a bot by ID
+ */
+export const GetBotParams = zod.object({
   id: zod.coerce.number(),
 });
 
-export const GetBotTypeResponse = zod.object({
+export const GetBotResponse = zod.object({
   id: zod.number(),
   name: zod.string(),
+  username: zod.string(),
   description: zod.string(),
-  price: zod.number(),
   category: zod.string(),
-  emoji: zod.string(),
-  features: zod.array(zod.string()),
-  popular: zod.boolean(),
-  imageUrl: zod.string().nullish(),
-  serverMonthlyPrice: zod.number().optional(),
+  icon: zod.string(),
+  rating: zod.number(),
+  reviewCount: zod.number(),
+  isPremium: zod.boolean().optional(),
+  isVerified: zod.boolean().optional(),
+  languages: zod.array(zod.string()),
+  subscribers: zod.number().nullish(),
+  createdAt: zod.string().optional(),
 });
 
 /**
- * @summary List all orders (admin)
+ * @summary Get featured bots
  */
-export const ListOrdersResponseItem = zod.object({
+export const GetFeaturedBotsResponseItem = zod.object({
   id: zod.number(),
-  botTypeId: zod.number(),
-  botTypeName: zod.string(),
-  clientName: zod.string(),
-  clientPhone: zod.string(),
-  telegramId: zod.string(),
-  telegramUsername: zod.string().nullish(),
-  status: zod.enum([
-    "pending",
-    "confirmed",
-    "in_progress",
-    "completed",
-    "cancelled",
-  ]),
-  totalPrice: zod.number(),
-  notes: zod.string().nullish(),
-  referralCode: zod.string().nullish(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
+  name: zod.string(),
+  username: zod.string(),
+  description: zod.string(),
+  category: zod.string(),
+  icon: zod.string(),
+  rating: zod.number(),
+  reviewCount: zod.number(),
+  isPremium: zod.boolean().optional(),
+  isVerified: zod.boolean().optional(),
+  languages: zod.array(zod.string()),
+  subscribers: zod.number().nullish(),
+  createdAt: zod.string().optional(),
 });
-export const ListOrdersResponse = zod.array(ListOrdersResponseItem);
+export const GetFeaturedBotsResponse = zod.array(GetFeaturedBotsResponseItem);
 
 /**
- * @summary Submit a new bot order
+ * @summary Get marketplace stats
  */
-export const CreateOrderBody = zod.object({
-  botTypeId: zod.number(),
-  clientName: zod.string(),
-  clientPhone: zod.string(),
-  telegramId: zod.string(),
-  telegramUsername: zod.string().nullish(),
-  notes: zod.string().nullish(),
-  referralCode: zod.string().nullish(),
-});
-
-/**
- * @summary Get order by id
- */
-export const GetOrderParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const GetOrderResponse = zod.object({
-  id: zod.number(),
-  botTypeId: zod.number(),
-  botTypeName: zod.string(),
-  clientName: zod.string(),
-  clientPhone: zod.string(),
-  telegramId: zod.string(),
-  telegramUsername: zod.string().nullish(),
-  status: zod.enum([
-    "pending",
-    "confirmed",
-    "in_progress",
-    "completed",
-    "cancelled",
-  ]),
-  totalPrice: zod.number(),
-  notes: zod.string().nullish(),
-  referralCode: zod.string().nullish(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
-
-/**
- * @summary Update order status (admin)
- */
-export const UpdateOrderStatusParams = zod.object({
-  id: zod.coerce.number(),
-});
-
-export const UpdateOrderStatusBody = zod.object({
-  status: zod.enum([
-    "pending",
-    "confirmed",
-    "in_progress",
-    "completed",
-    "cancelled",
-  ]),
-});
-
-export const UpdateOrderStatusResponse = zod.object({
-  id: zod.number(),
-  botTypeId: zod.number(),
-  botTypeName: zod.string(),
-  clientName: zod.string(),
-  clientPhone: zod.string(),
-  telegramId: zod.string(),
-  telegramUsername: zod.string().nullish(),
-  status: zod.enum([
-    "pending",
-    "confirmed",
-    "in_progress",
-    "completed",
-    "cancelled",
-  ]),
-  totalPrice: zod.number(),
-  notes: zod.string().nullish(),
-  referralCode: zod.string().nullish(),
-  createdAt: zod.string(),
-  updatedAt: zod.string().optional(),
-});
-
-/**
- * @summary Get platform statistics
- */
-export const GetDashboardStatsResponse = zod.object({
-  totalOrders: zod.number(),
-  pendingOrders: zod.number(),
-  completedOrders: zod.number(),
-  totalRevenue: zod.number(),
+export const GetBotStatsResponse = zod.object({
+  totalBots: zod.number(),
+  totalCategories: zod.number(),
+  totalReviews: zod.number(),
   totalUsers: zod.number(),
-  popularBot: zod.string(),
-  recentOrders: zod
-    .array(
-      zod.object({
-        id: zod.number(),
-        botTypeId: zod.number(),
-        botTypeName: zod.string(),
-        clientName: zod.string(),
-        clientPhone: zod.string(),
-        telegramId: zod.string(),
-        telegramUsername: zod.string().nullish(),
-        status: zod.enum([
-          "pending",
-          "confirmed",
-          "in_progress",
-          "completed",
-          "cancelled",
-        ]),
-        totalPrice: zod.number(),
-        notes: zod.string().nullish(),
-        referralCode: zod.string().nullish(),
-        createdAt: zod.string(),
-        updatedAt: zod.string().optional(),
-      }),
-    )
-    .optional(),
 });
 
 /**
- * @summary Get referral info by code
+ * @summary List all categories
  */
-export const GetReferralInfoParams = zod.object({
-  code: zod.coerce.string(),
+export const ListCategoriesResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  icon: zod.string(),
+  count: zod.number(),
+});
+export const ListCategoriesResponse = zod.array(ListCategoriesResponseItem);
+
+/**
+ * @summary List reviews for a bot
+ */
+export const ListBotReviewsParams = zod.object({
+  id: zod.coerce.number(),
 });
 
-export const GetReferralInfoResponse = zod.object({
-  code: zod.string(),
-  referrerName: zod.string(),
-  totalReferrals: zod.number(),
+export const ListBotReviewsResponseItem = zod.object({
+  id: zod.number(),
+  botId: zod.number(),
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  rating: zod.number(),
+  comment: zod.string(),
+  createdAt: zod.string(),
+});
+export const ListBotReviewsResponse = zod.array(ListBotReviewsResponseItem);
+
+/**
+ * @summary Create a review for a bot
+ */
+export const CreateBotReviewParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const CreateBotReviewBody = zod.object({
+  authorName: zod.string(),
+  authorAvatar: zod.string().nullish(),
+  rating: zod.number(),
+  comment: zod.string(),
+});
+
+/**
+ * @summary Telegram webhook handler
+ */
+export const TelegramWebhookResponse = zod.object({
+  status: zod.string(),
 });

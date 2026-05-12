@@ -28,17 +28,13 @@ localPort = 8081
 externalPort = 80
 
 [[ports]]
-localPort = 8082
-externalPort = 3002
-
-[[ports]]
-localPort = 18801
+localPort = 21427
 externalPort = 3000
+
+[nix]
+channel = "stable-25_05"
 
 [userenv]
 
 [userenv.shared]
-MINI_APP_URL = "https://botmarket.replit.app"
-
-[nix]
-channel = "stable-25_05"
+MINI_APP_URL = "https://4e875602-db21-4fac-aa31-482f27c8edbb-00-7cdlewp9ajd2.pike.replit.dev"

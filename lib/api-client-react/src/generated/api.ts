@@ -17,13 +17,15 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
-  BotType,
-  DashboardStats,
+  ApiError,
+  Bot,
+  BotInput,
+  Category,
   HealthStatus,
-  Order,
-  OrderInput,
-  OrderStatusUpdate,
-  ReferralInfo,
+  ListBotsParams,
+  MarketStats,
+  Review,
+  ReviewInput,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -111,37 +113,59 @@ export function useHealthCheck<
 }
 
 /**
- * @summary List all bot types
+ * @summary List all bots
  */
-export const getListBotsUrl = () => {
-  return `/api/bots`;
+export const getListBotsUrl = (params?: ListBotsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/bots?${stringifiedParams}`
+    : `/api/bots`;
 };
 
-export const listBots = async (options?: RequestInit): Promise<BotType[]> => {
-  return customFetch<BotType[]>(getListBotsUrl(), {
+export const listBots = async (
+  params?: ListBotsParams,
+  options?: RequestInit,
+): Promise<Bot[]> => {
+  return customFetch<Bot[]>(getListBotsUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getListBotsQueryKey = () => {
-  return [`/api/bots`] as const;
+export const getListBotsQueryKey = (params?: ListBotsParams) => {
+  return [`/api/bots`, ...(params ? [params] : [])] as const;
 };
 
 export const getListBotsQueryOptions = <
   TData = Awaited<ReturnType<typeof listBots>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof listBots>>, TError, TData>;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListBotsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBots>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListBotsQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListBotsQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listBots>>> = ({
     signal,
-  }) => listBots({ signal, ...requestOptions });
+  }) => listBots(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listBots>>,
@@ -156,104 +180,24 @@ export type ListBotsQueryResult = NonNullable<
 export type ListBotsQueryError = ErrorType<unknown>;
 
 /**
- * @summary List all bot types
+ * @summary List all bots
  */
 
 export function useListBots<
   TData = Awaited<ReturnType<typeof listBots>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<Awaited<ReturnType<typeof listBots>>, TError, TData>;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListBotsQueryOptions(options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary Get bot type by id
- */
-export const getGetBotTypeUrl = (id: number) => {
-  return `/api/bots/${id}`;
-};
-
-export const getBotType = async (
-  id: number,
-  options?: RequestInit,
-): Promise<BotType> => {
-  return customFetch<BotType>(getGetBotTypeUrl(id), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getGetBotTypeQueryKey = (id: number) => {
-  return [`/api/bots/${id}`] as const;
-};
-
-export const getGetBotTypeQueryOptions = <
-  TData = Awaited<ReturnType<typeof getBotType>>,
-  TError = ErrorType<void>,
 >(
-  id: number,
+  params?: ListBotsParams,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getBotType>>,
-      TError,
-      TData
-    >;
-    request?: SecondParameter<typeof customFetch>;
-  },
-) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getGetBotTypeQueryKey(id);
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBotType>>> = ({
-    signal,
-  }) => getBotType(id, { signal, ...requestOptions });
-
-  return {
-    queryKey,
-    queryFn,
-    enabled: !!id,
-    ...queryOptions,
-  } as UseQueryOptions<
-    Awaited<ReturnType<typeof getBotType>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type GetBotTypeQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getBotType>>
->;
-export type GetBotTypeQueryError = ErrorType<void>;
-
-/**
- * @summary Get bot type by id
- */
-
-export function useGetBotType<
-  TData = Awaited<ReturnType<typeof getBotType>>,
-  TError = ErrorType<void>,
->(
-  id: number,
-  options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getBotType>>,
+      Awaited<ReturnType<typeof listBots>>,
       TError,
       TData
     >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetBotTypeQueryOptions(id, options);
+  const queryOptions = getListBotsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -263,115 +207,42 @@ export function useGetBotType<
 }
 
 /**
- * @summary List all orders (admin)
+ * @summary Create a new bot
  */
-export const getListOrdersUrl = () => {
-  return `/api/orders`;
+export const getCreateBotUrl = () => {
+  return `/api/bots`;
 };
 
-export const listOrders = async (options?: RequestInit): Promise<Order[]> => {
-  return customFetch<Order[]>(getListOrdersUrl(), {
-    ...options,
-    method: "GET",
-  });
-};
-
-export const getListOrdersQueryKey = () => {
-  return [`/api/orders`] as const;
-};
-
-export const getListOrdersQueryOptions = <
-  TData = Awaited<ReturnType<typeof listOrders>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listOrders>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
-  const { query: queryOptions, request: requestOptions } = options ?? {};
-
-  const queryKey = queryOptions?.queryKey ?? getListOrdersQueryKey();
-
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof listOrders>>> = ({
-    signal,
-  }) => listOrders({ signal, ...requestOptions });
-
-  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof listOrders>>,
-    TError,
-    TData
-  > & { queryKey: QueryKey };
-};
-
-export type ListOrdersQueryResult = NonNullable<
-  Awaited<ReturnType<typeof listOrders>>
->;
-export type ListOrdersQueryError = ErrorType<unknown>;
-
-/**
- * @summary List all orders (admin)
- */
-
-export function useListOrders<
-  TData = Awaited<ReturnType<typeof listOrders>>,
-  TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof listOrders>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getListOrdersQueryOptions(options);
-
-  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
-    queryKey: QueryKey;
-  };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-/**
- * @summary Submit a new bot order
- */
-export const getCreateOrderUrl = () => {
-  return `/api/orders`;
-};
-
-export const createOrder = async (
-  orderInput: OrderInput,
+export const createBot = async (
+  botInput: BotInput,
   options?: RequestInit,
-): Promise<Order> => {
-  return customFetch<Order>(getCreateOrderUrl(), {
+): Promise<Bot> => {
+  return customFetch<Bot>(getCreateBotUrl(), {
     ...options,
     method: "POST",
     headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(orderInput),
+    body: JSON.stringify(botInput),
   });
 };
 
-export const getCreateOrderMutationOptions = <
+export const getCreateBotMutationOptions = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createOrder>>,
+    Awaited<ReturnType<typeof createBot>>,
     TError,
-    { data: BodyType<OrderInput> },
+    { data: BodyType<BotInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
-  Awaited<ReturnType<typeof createOrder>>,
+  Awaited<ReturnType<typeof createBot>>,
   TError,
-  { data: BodyType<OrderInput> },
+  { data: BodyType<BotInput> },
   TContext
 > => {
-  const mutationKey = ["createOrder"];
+  const mutationKey = ["createBot"];
   const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation &&
       "mutationKey" in options.mutation &&
@@ -381,123 +252,113 @@ export const getCreateOrderMutationOptions = <
     : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof createOrder>>,
-    { data: BodyType<OrderInput> }
+    Awaited<ReturnType<typeof createBot>>,
+    { data: BodyType<BotInput> }
   > = (props) => {
     const { data } = props ?? {};
 
-    return createOrder(data, requestOptions);
+    return createBot(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
 };
 
-export type CreateOrderMutationResult = NonNullable<
-  Awaited<ReturnType<typeof createOrder>>
+export type CreateBotMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBot>>
 >;
-export type CreateOrderMutationBody = BodyType<OrderInput>;
-export type CreateOrderMutationError = ErrorType<unknown>;
+export type CreateBotMutationBody = BodyType<BotInput>;
+export type CreateBotMutationError = ErrorType<unknown>;
 
 /**
- * @summary Submit a new bot order
+ * @summary Create a new bot
  */
-export const useCreateOrder = <
+export const useCreateBot = <
   TError = ErrorType<unknown>,
   TContext = unknown,
 >(options?: {
   mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof createOrder>>,
+    Awaited<ReturnType<typeof createBot>>,
     TError,
-    { data: BodyType<OrderInput> },
+    { data: BodyType<BotInput> },
     TContext
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseMutationResult<
-  Awaited<ReturnType<typeof createOrder>>,
+  Awaited<ReturnType<typeof createBot>>,
   TError,
-  { data: BodyType<OrderInput> },
+  { data: BodyType<BotInput> },
   TContext
 > => {
-  return useMutation(getCreateOrderMutationOptions(options));
+  return useMutation(getCreateBotMutationOptions(options));
 };
 
 /**
- * @summary Get order by id
+ * @summary Get a bot by ID
  */
-export const getGetOrderUrl = (id: number) => {
-  return `/api/orders/${id}`;
+export const getGetBotUrl = (id: number) => {
+  return `/api/bots/${id}`;
 };
 
-export const getOrder = async (
+export const getBot = async (
   id: number,
   options?: RequestInit,
-): Promise<Order> => {
-  return customFetch<Order>(getGetOrderUrl(id), {
+): Promise<Bot> => {
+  return customFetch<Bot>(getGetBotUrl(id), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetOrderQueryKey = (id: number) => {
-  return [`/api/orders/${id}`] as const;
+export const getGetBotQueryKey = (id: number) => {
+  return [`/api/bots/${id}`] as const;
 };
 
-export const getGetOrderQueryOptions = <
-  TData = Awaited<ReturnType<typeof getOrder>>,
-  TError = ErrorType<unknown>,
+export const getGetBotQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBot>>,
+  TError = ErrorType<ApiError>,
 >(
   id: number,
   options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getOrder>>,
-      TError,
-      TData
-    >;
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getBot>>, TError, TData>;
     request?: SecondParameter<typeof customFetch>;
   },
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetOrderQueryKey(id);
+  const queryKey = queryOptions?.queryKey ?? getGetBotQueryKey(id);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOrder>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBot>>> = ({
     signal,
-  }) => getOrder(id, { signal, ...requestOptions });
+  }) => getBot(id, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
     enabled: !!id,
     ...queryOptions,
-  } as UseQueryOptions<Awaited<ReturnType<typeof getOrder>>, TError, TData> & {
+  } as UseQueryOptions<Awaited<ReturnType<typeof getBot>>, TError, TData> & {
     queryKey: QueryKey;
   };
 };
 
-export type GetOrderQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getOrder>>
->;
-export type GetOrderQueryError = ErrorType<unknown>;
+export type GetBotQueryResult = NonNullable<Awaited<ReturnType<typeof getBot>>>;
+export type GetBotQueryError = ErrorType<ApiError>;
 
 /**
- * @summary Get order by id
+ * @summary Get a bot by ID
  */
 
-export function useGetOrder<
-  TData = Awaited<ReturnType<typeof getOrder>>,
-  TError = ErrorType<unknown>,
+export function useGetBot<
+  TData = Awaited<ReturnType<typeof getBot>>,
+  TError = ErrorType<ApiError>,
 >(
   id: number,
   options?: {
-    query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getOrder>>,
-      TError,
-      TData
-    >;
+    query?: UseQueryOptions<Awaited<ReturnType<typeof getBot>>, TError, TData>;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetOrderQueryOptions(id, options);
+  const queryOptions = getGetBotQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -507,118 +368,31 @@ export function useGetOrder<
 }
 
 /**
- * @summary Update order status (admin)
+ * @summary Get featured bots
  */
-export const getUpdateOrderStatusUrl = (id: number) => {
-  return `/api/orders/${id}/status`;
+export const getGetFeaturedBotsUrl = () => {
+  return `/api/bots/featured`;
 };
 
-export const updateOrderStatus = async (
-  id: number,
-  orderStatusUpdate: OrderStatusUpdate,
+export const getFeaturedBots = async (
   options?: RequestInit,
-): Promise<Order> => {
-  return customFetch<Order>(getUpdateOrderStatusUrl(id), {
-    ...options,
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", ...options?.headers },
-    body: JSON.stringify(orderStatusUpdate),
-  });
-};
-
-export const getUpdateOrderStatusMutationOptions = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateOrderStatus>>,
-    TError,
-    { id: number; data: BodyType<OrderStatusUpdate> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationOptions<
-  Awaited<ReturnType<typeof updateOrderStatus>>,
-  TError,
-  { id: number; data: BodyType<OrderStatusUpdate> },
-  TContext
-> => {
-  const mutationKey = ["updateOrderStatus"];
-  const { mutation: mutationOptions, request: requestOptions } = options
-    ? options.mutation &&
-      "mutationKey" in options.mutation &&
-      options.mutation.mutationKey
-      ? options
-      : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, request: undefined };
-
-  const mutationFn: MutationFunction<
-    Awaited<ReturnType<typeof updateOrderStatus>>,
-    { id: number; data: BodyType<OrderStatusUpdate> }
-  > = (props) => {
-    const { id, data } = props ?? {};
-
-    return updateOrderStatus(id, data, requestOptions);
-  };
-
-  return { mutationFn, ...mutationOptions };
-};
-
-export type UpdateOrderStatusMutationResult = NonNullable<
-  Awaited<ReturnType<typeof updateOrderStatus>>
->;
-export type UpdateOrderStatusMutationBody = BodyType<OrderStatusUpdate>;
-export type UpdateOrderStatusMutationError = ErrorType<unknown>;
-
-/**
- * @summary Update order status (admin)
- */
-export const useUpdateOrderStatus = <
-  TError = ErrorType<unknown>,
-  TContext = unknown,
->(options?: {
-  mutation?: UseMutationOptions<
-    Awaited<ReturnType<typeof updateOrderStatus>>,
-    TError,
-    { id: number; data: BodyType<OrderStatusUpdate> },
-    TContext
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseMutationResult<
-  Awaited<ReturnType<typeof updateOrderStatus>>,
-  TError,
-  { id: number; data: BodyType<OrderStatusUpdate> },
-  TContext
-> => {
-  return useMutation(getUpdateOrderStatusMutationOptions(options));
-};
-
-/**
- * @summary Get platform statistics
- */
-export const getGetDashboardStatsUrl = () => {
-  return `/api/stats/dashboard`;
-};
-
-export const getDashboardStats = async (
-  options?: RequestInit,
-): Promise<DashboardStats> => {
-  return customFetch<DashboardStats>(getGetDashboardStatsUrl(), {
+): Promise<Bot[]> => {
+  return customFetch<Bot[]>(getGetFeaturedBotsUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetDashboardStatsQueryKey = () => {
-  return [`/api/stats/dashboard`] as const;
+export const getGetFeaturedBotsQueryKey = () => {
+  return [`/api/bots/featured`] as const;
 };
 
-export const getGetDashboardStatsQueryOptions = <
-  TData = Awaited<ReturnType<typeof getDashboardStats>>,
+export const getGetFeaturedBotsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFeaturedBots>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getDashboardStats>>,
+    Awaited<ReturnType<typeof getFeaturedBots>>,
     TError,
     TData
   >;
@@ -626,40 +400,40 @@ export const getGetDashboardStatsQueryOptions = <
 }) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetDashboardStatsQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getGetFeaturedBotsQueryKey();
 
-  const queryFn: QueryFunction<
-    Awaited<ReturnType<typeof getDashboardStats>>
-  > = ({ signal }) => getDashboardStats({ signal, ...requestOptions });
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getFeaturedBots>>> = ({
+    signal,
+  }) => getFeaturedBots({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
-    Awaited<ReturnType<typeof getDashboardStats>>,
+    Awaited<ReturnType<typeof getFeaturedBots>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type GetDashboardStatsQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getDashboardStats>>
+export type GetFeaturedBotsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFeaturedBots>>
 >;
-export type GetDashboardStatsQueryError = ErrorType<unknown>;
+export type GetFeaturedBotsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get platform statistics
+ * @summary Get featured bots
  */
 
-export function useGetDashboardStats<
-  TData = Awaited<ReturnType<typeof getDashboardStats>>,
+export function useGetFeaturedBots<
+  TData = Awaited<ReturnType<typeof getFeaturedBots>>,
   TError = ErrorType<unknown>,
 >(options?: {
   query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getDashboardStats>>,
+    Awaited<ReturnType<typeof getFeaturedBots>>,
     TError,
     TData
   >;
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetDashboardStatsQueryOptions(options);
+  const queryOptions = getGetFeaturedBotsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -669,34 +443,184 @@ export function useGetDashboardStats<
 }
 
 /**
- * @summary Get referral info by code
+ * @summary Get marketplace stats
  */
-export const getGetReferralInfoUrl = (code: string) => {
-  return `/api/users/ref/${code}`;
+export const getGetBotStatsUrl = () => {
+  return `/api/bots/stats`;
 };
 
-export const getReferralInfo = async (
-  code: string,
+export const getBotStats = async (
   options?: RequestInit,
-): Promise<ReferralInfo> => {
-  return customFetch<ReferralInfo>(getGetReferralInfoUrl(code), {
+): Promise<MarketStats> => {
+  return customFetch<MarketStats>(getGetBotStatsUrl(), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetReferralInfoQueryKey = (code: string) => {
-  return [`/api/users/ref/${code}`] as const;
+export const getGetBotStatsQueryKey = () => {
+  return [`/api/bots/stats`] as const;
 };
 
-export const getGetReferralInfoQueryOptions = <
-  TData = Awaited<ReturnType<typeof getReferralInfo>>,
+export const getGetBotStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getBotStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBotStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetBotStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getBotStats>>> = ({
+    signal,
+  }) => getBotStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getBotStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetBotStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBotStats>>
+>;
+export type GetBotStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get marketplace stats
+ */
+
+export function useGetBotStats<
+  TData = Awaited<ReturnType<typeof getBotStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getBotStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetBotStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all categories
+ */
+export const getListCategoriesUrl = () => {
+  return `/api/categories`;
+};
+
+export const listCategories = async (
+  options?: RequestInit,
+): Promise<Category[]> => {
+  return customFetch<Category[]>(getListCategoriesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCategoriesQueryKey = () => {
+  return [`/api/categories`] as const;
+};
+
+export const getListCategoriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCategories>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCategories>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCategoriesQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCategories>>> = ({
+    signal,
+  }) => listCategories({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCategories>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCategoriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCategories>>
+>;
+export type ListCategoriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all categories
+ */
+
+export function useListCategories<
+  TData = Awaited<ReturnType<typeof listCategories>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCategories>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCategoriesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List reviews for a bot
+ */
+export const getListBotReviewsUrl = (id: number) => {
+  return `/api/bots/${id}/reviews`;
+};
+
+export const listBotReviews = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Review[]> => {
+  return customFetch<Review[]>(getListBotReviewsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListBotReviewsQueryKey = (id: number) => {
+  return [`/api/bots/${id}/reviews`] as const;
+};
+
+export const getListBotReviewsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBotReviews>>,
   TError = ErrorType<unknown>,
 >(
-  code: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getReferralInfo>>,
+      Awaited<ReturnType<typeof listBotReviews>>,
       TError,
       TData
     >;
@@ -705,48 +629,48 @@ export const getGetReferralInfoQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetReferralInfoQueryKey(code);
+  const queryKey = queryOptions?.queryKey ?? getListBotReviewsQueryKey(id);
 
-  const queryFn: QueryFunction<Awaited<ReturnType<typeof getReferralInfo>>> = ({
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listBotReviews>>> = ({
     signal,
-  }) => getReferralInfo(code, { signal, ...requestOptions });
+  }) => listBotReviews(id, { signal, ...requestOptions });
 
   return {
     queryKey,
     queryFn,
-    enabled: !!code,
+    enabled: !!id,
     ...queryOptions,
   } as UseQueryOptions<
-    Awaited<ReturnType<typeof getReferralInfo>>,
+    Awaited<ReturnType<typeof listBotReviews>>,
     TError,
     TData
   > & { queryKey: QueryKey };
 };
 
-export type GetReferralInfoQueryResult = NonNullable<
-  Awaited<ReturnType<typeof getReferralInfo>>
+export type ListBotReviewsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBotReviews>>
 >;
-export type GetReferralInfoQueryError = ErrorType<unknown>;
+export type ListBotReviewsQueryError = ErrorType<unknown>;
 
 /**
- * @summary Get referral info by code
+ * @summary List reviews for a bot
  */
 
-export function useGetReferralInfo<
-  TData = Awaited<ReturnType<typeof getReferralInfo>>,
+export function useListBotReviews<
+  TData = Awaited<ReturnType<typeof listBotReviews>>,
   TError = ErrorType<unknown>,
 >(
-  code: string,
+  id: number,
   options?: {
     query?: UseQueryOptions<
-      Awaited<ReturnType<typeof getReferralInfo>>,
+      Awaited<ReturnType<typeof listBotReviews>>,
       TError,
       TData
     >;
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetReferralInfoQueryOptions(code, options);
+  const queryOptions = getListBotReviewsQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -754,3 +678,171 @@ export function useGetReferralInfo<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Create a review for a bot
+ */
+export const getCreateBotReviewUrl = (id: number) => {
+  return `/api/bots/${id}/reviews`;
+};
+
+export const createBotReview = async (
+  id: number,
+  reviewInput: ReviewInput,
+  options?: RequestInit,
+): Promise<Review> => {
+  return customFetch<Review>(getCreateBotReviewUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reviewInput),
+  });
+};
+
+export const getCreateBotReviewMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBotReview>>,
+    TError,
+    { id: number; data: BodyType<ReviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBotReview>>,
+  TError,
+  { id: number; data: BodyType<ReviewInput> },
+  TContext
+> => {
+  const mutationKey = ["createBotReview"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBotReview>>,
+    { id: number; data: BodyType<ReviewInput> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return createBotReview(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBotReviewMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBotReview>>
+>;
+export type CreateBotReviewMutationBody = BodyType<ReviewInput>;
+export type CreateBotReviewMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a review for a bot
+ */
+export const useCreateBotReview = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBotReview>>,
+    TError,
+    { id: number; data: BodyType<ReviewInput> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBotReview>>,
+  TError,
+  { id: number; data: BodyType<ReviewInput> },
+  TContext
+> => {
+  return useMutation(getCreateBotReviewMutationOptions(options));
+};
+
+/**
+ * @summary Telegram webhook handler
+ */
+export const getTelegramWebhookUrl = () => {
+  return `/api/webhook`;
+};
+
+export const telegramWebhook = async (
+  options?: RequestInit,
+): Promise<HealthStatus> => {
+  return customFetch<HealthStatus>(getTelegramWebhookUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getTelegramWebhookMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof telegramWebhook>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof telegramWebhook>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["telegramWebhook"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof telegramWebhook>>,
+    void
+  > = () => {
+    return telegramWebhook(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TelegramWebhookMutationResult = NonNullable<
+  Awaited<ReturnType<typeof telegramWebhook>>
+>;
+
+export type TelegramWebhookMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Telegram webhook handler
+ */
+export const useTelegramWebhook = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof telegramWebhook>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof telegramWebhook>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getTelegramWebhookMutationOptions(options));
+};

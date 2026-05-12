@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "BotMarket Mini App"
+version = "1.0.0"
+id = "artifacts/botmarket"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21427
+
+[services.development]
+run = "pnpm --filter @workspace/botmarket run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/botmarket", "run", "build" ]
+publicDir = "artifacts/botmarket/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21427"
+BASE_PATH = "/"

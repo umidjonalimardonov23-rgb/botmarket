@@ -1,0 +1,21 @@
+[variables]
+NODE_ENV = "production"
+BASE_PATH = "/"
+PORT = "8080"
+
+[phases.setup]
+nixPkgs = ["nodejs_22"]
+
+[phases.install]
+cmds = [
+  "npm install -g pnpm@9 --ignore-scripts",
+  "pnpm install --frozen-lockfile --ignore-scripts"
+]
+
+[phases.build]
+cmds = [
+  "pnpm run build:railway"
+]
+
+[start]
+cmd = "node --enable-source-maps artifacts/api-server/dist/index.mjs"

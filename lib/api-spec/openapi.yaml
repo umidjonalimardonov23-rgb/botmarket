@@ -1,22 +1,30 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: BotMarket API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: bots
+    description: Bot marketplace operations
+  - name: categories
+    description: Bot categories
+  - name: reviews
+    description: Bot reviews
+  - name: users
+    description: User operations
+  - name: telegram
+    description: Telegram webhook
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +32,180 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /bots:
+    get:
+      operationId: listBots
+      tags: [bots]
+      summary: List all bots
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: lang
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of bots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bot"
+    post:
+      operationId: createBot
+      tags: [bots]
+      summary: Create a new bot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BotInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bot"
+
+  /bots/{id}:
+    get:
+      operationId: getBot
+      tags: [bots]
+      summary: Get a bot by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Bot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bot"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /bots/featured:
+    get:
+      operationId: getFeaturedBots
+      tags: [bots]
+      summary: Get featured bots
+      responses:
+        "200":
+          description: Featured bots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bot"
+
+  /bots/stats:
+    get:
+      operationId: getBotStats
+      tags: [bots]
+      summary: Get marketplace stats
+      responses:
+        "200":
+          description: Marketplace statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketStats"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /bots/{id}/reviews:
+    get:
+      operationId: listBotReviews
+      tags: [reviews]
+      summary: List reviews for a bot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+    post:
+      operationId: createBotReview
+      tags: [reviews]
+      summary: Create a review for a bot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /webhook:
+    post:
+      operationId: telegramWebhook
+      tags: [telegram]
+      summary: Telegram webhook handler
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +216,126 @@ components:
       required:
         - status
 
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Bot:
+      type: object
+      required: [id, name, description, category, icon, rating, reviewCount, username, languages]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        username:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        icon:
+          type: string
+        rating:
+          type: number
+        reviewCount:
+          type: integer
+        isPremium:
+          type: boolean
+        isVerified:
+          type: boolean
+        languages:
+          type: array
+          items:
+            type: string
+        subscribers:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+
+    BotInput:
+      type: object
+      required: [name, username, description, category, icon, languages]
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        icon:
+          type: string
+        isPremium:
+          type: boolean
+        isVerified:
+          type: boolean
+        languages:
+          type: array
+          items:
+            type: string
+        subscribers:
+          type: ["integer", "null"]
+
+    Category:
+      type: object
+      required: [id, name, icon, count]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        count:
+          type: integer
+
+    Review:
+      type: object
+      required: [id, botId, authorName, rating, comment, createdAt]
+      properties:
+        id:
+          type: integer
+        botId:
+          type: integer
+        authorName:
+          type: string
+        authorAvatar:
+          type: ["string", "null"]
+        rating:
+          type: integer
+        comment:
+          type: string
+        createdAt:
+          type: string
+
+    ReviewInput:
+      type: object
+      required: [authorName, rating, comment]
+      properties:
+        authorName:
+          type: string
+        authorAvatar:
+          type: ["string", "null"]
+        rating:
+          type: integer
+        comment:
+          type: string
+
+    MarketStats:
+      type: object
+      required: [totalBots, totalCategories, totalReviews, totalUsers]
+      properties:
+        totalBots:
+          type: integer
+        totalCategories:
+          type: integer
+        totalReviews:
+          type: integer
+        totalUsers:
+          type: integer
