@@ -1,15 +1,30 @@
 FROM node:22-slim
+WORKDIR /app
 
-  WORKDIR /app
+# Install pnpm
+RUN npm install -g pnpm@10
 
-  # Copy only standalone server files (not monorepo)
-  COPY server.js ./
-  COPY package.json ./
+# Copy full monorepo
+COPY . .
 
-  # Install only server.js dependencies
-  RUN npm install --ignore-scripts
+# Install all dependencies (including devDeps for build)
+RUN pnpm install --frozen-lockfile
 
-  EXPOSE 8080
+# Build mini-app (static frontend)
+# BASE_PATH=/ means served from root, PORT is dummy (only needed by vite config)
+ENV BASE_PATH=/
+ENV PORT=3000
+RUN pnpm --filter @workspace/mini-app run build
 
-  CMD ["node", "server.js"]
-  
+# Build API server
+ENV NODE_ENV=production
+RUN pnpm --filter @workspace/api-server run build
+
+# Copy mini-app static output next to API server dist
+RUN cp -r artifacts/mini-app/dist/public artifacts/api-server/dist/public
+
+# Runtime
+ENV PORT=8080
+EXPOSE 8080
+
+CMD ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
