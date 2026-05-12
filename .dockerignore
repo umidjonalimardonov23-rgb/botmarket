@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Node modules (will be reinstalled)
+node_modules
+**/node_modules
+
+# Build outputs
+**/dist
+**/.turbo
+
+# Replit specific
+.replit
+.upm
+.breakpoints
+.local
+attached_assets
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test
+**/*.test.ts
+**/*.spec.ts
