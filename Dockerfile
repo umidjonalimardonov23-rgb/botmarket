@@ -1,23 +1,15 @@
-FROM node:20-slim
+FROM node:22-slim
 
-WORKDIR /app
+  WORKDIR /app
 
-RUN npm install -g pnpm@10
+  # Copy only standalone server files (not monorepo)
+  COPY server.js ./
+  COPY package.json ./
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.json tsconfig.base.json ./
+  # Install only server.js dependencies
+  RUN npm install --ignore-scripts
 
-COPY artifacts/api-server/package.json ./artifacts/api-server/
-COPY lib/api-zod/package.json ./lib/api-zod/
-COPY lib/db/package.json ./lib/db/
-COPY lib/api-client-react/package.json ./lib/api-client-react/
-COPY lib/api-spec/package.json ./lib/api-spec/
+  EXPOSE 8080
 
-RUN pnpm install --no-frozen-lockfile
-
-COPY . .
-
-RUN pnpm --filter @workspace/api-server run build
-
-EXPOSE 8080
-
-CMD ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+  CMD ["node", "server.js"]
+  
