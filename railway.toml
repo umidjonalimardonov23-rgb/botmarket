@@ -5,6 +5,6 @@ buildCommand = "npm install -g pnpm@10 && pnpm install --no-frozen-lockfile && p
 [deploy]
 startCommand = "node --enable-source-maps artifacts/api-server/dist/index.mjs"
 healthcheckPath = "/api/healthz"
-healthcheckTimeout = 60
+healthcheckTimeout = 90
 restartPolicyType = "on_failure"
-restartPolicyMaxRetries = 5
+restartPolicyMaxRetries = 3

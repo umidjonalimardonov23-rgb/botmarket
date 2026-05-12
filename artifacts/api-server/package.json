@@ -16,8 +16,7 @@
     "express": "^5",
     "grammy": "^1.42.0",
     "node-cron": "^4.2.1",
-    "pino": "^9",
-    "pino-http": "^10"
+    "pino": "^9"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
